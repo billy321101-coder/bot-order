@@ -198,7 +198,7 @@ const commands = [
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 
-client.once('clientReady', async () => {
+client.once('ready', async () => {
   console.log(`✅ Bot online: ${client.user.tag}`);
 
   try {
@@ -297,9 +297,11 @@ client.on('interactionCreate', async interaction => {
     saveData(state);
 
     if (state.boardChannelId) {
-      const ch = await client.channels.fetch(state.boardChannelId);
-      await sendLog(order);
-      await syncBoard(ch);
+      try {
+        const ch = await client.channels.fetch(state.boardChannelId);
+        await sendLog(order);
+        await syncBoard(ch);
+      } catch (e) { console.error('board sync failed (add):', e.message); }
     }
     return interaction.editReply(`✅ เพิ่มงาน **${name}** แล้ว\n\`${id}\``);
   }
@@ -310,14 +312,16 @@ client.on('interactionCreate', async interaction => {
     if (!wip.length)
       return interaction.reply({ ...EPH, content: '⚠️ ไม่มีงานที่กำลังทำอยู่' });
 
+    const wipShown = wip.slice(0, 25);
     const menu = new StringSelectMenuBuilder()
       .setCustomId('sel_complete').setPlaceholder('เลือกงานที่เสร็จแล้ว')
-      .addOptions(wip.slice(0, 25).map(o => ({
+      .addOptions(wipShown.map(o => ({
         label: o.name.slice(0, 100), description: o.id, value: o.id,
       })));
 
+    const truncNote = wip.length > 25 ? ` _(แสดง 25 จาก ${wip.length} รายการ)_` : '';
     return interaction.reply({
-      ...EPH, content: '✅ เลือกงานที่ต้องการมาร์กว่าเสร็จ:',
+      ...EPH, content: `✅ เลือกงานที่ต้องการมาร์กว่าเสร็จ:${truncNote}`,
       components: [new ActionRowBuilder().addComponents(menu)],
     });
   }
@@ -330,9 +334,11 @@ client.on('interactionCreate', async interaction => {
     order.doneAt = tsNow();
     saveData(state);
     if (state.boardChannelId) {
-      const ch = await client.channels.fetch(state.boardChannelId);
-      await sendLog(order);
-      await syncBoard(ch);
+      try {
+        const ch = await client.channels.fetch(state.boardChannelId);
+        await sendLog(order);
+        await syncBoard(ch);
+      } catch (e) { console.error('board sync failed (complete):', e.message); }
     }
     return interaction.editReply({ content: `✅ **${order.name}** เสร็จแล้ว 🟢`, components: [] });
   }
@@ -342,15 +348,17 @@ client.on('interactionCreate', async interaction => {
     if (!state.orders.length)
       return interaction.reply({ ...EPH, content: '⚠️ ยังไม่มีออเดอร์' });
 
+    const ordersShown = state.orders.slice(0, 25);
     const menu = new StringSelectMenuBuilder()
       .setCustomId('sel_remove').setPlaceholder('เลือกงานที่ต้องการลบ')
-      .addOptions(state.orders.slice(0, 25).map(o => ({
+      .addOptions(ordersShown.map(o => ({
         label: `${o.status === 'wip' ? '🟡' : '🟢'} ${o.name.slice(0, 90)}`,
         description: o.id, value: o.id,
       })));
 
+    const truncNote = state.orders.length > 25 ? ` _(แสดง 25 จาก ${state.orders.length} รายการ)_` : '';
     return interaction.reply({
-      ...EPH, content: '🗑️ เลือกงานที่ต้องการลบ:',
+      ...EPH, content: `🗑️ เลือกงานที่ต้องการลบ:${truncNote}`,
       components: [new ActionRowBuilder().addComponents(menu)],
     });
   }
@@ -362,8 +370,10 @@ client.on('interactionCreate', async interaction => {
     const [removed] = state.orders.splice(idx, 1);
     saveData(state);
     if (state.boardChannelId) {
-      const ch = await client.channels.fetch(state.boardChannelId);
-      await syncBoard(ch);
+      try {
+        const ch = await client.channels.fetch(state.boardChannelId);
+        await syncBoard(ch);
+      } catch (e) { console.error('board sync failed (remove):', e.message); }
     }
     return interaction.editReply({ content: `✅ ลบ **${removed.name}** ออกแล้ว`, components: [] });
   }
@@ -384,8 +394,10 @@ client.on('interactionCreate', async interaction => {
     state.orders = [];
     saveData(state);
     if (state.boardChannelId) {
-      const ch = await client.channels.fetch(state.boardChannelId);
-      await syncBoard(ch);
+      try {
+        const ch = await client.channels.fetch(state.boardChannelId);
+        await syncBoard(ch);
+      } catch (e) { console.error('board sync failed (clear):', e.message); }
     }
     return interaction.editReply({ content: '✅ ล้างบอร์ดแล้ว', components: [] });
   }
@@ -398,10 +410,17 @@ client.on('interactionCreate', async interaction => {
   if (interaction.isButton() && interaction.customId === 'btn_list') {
     if (!state.orders.length)
       return interaction.reply({ ...EPH, content: '_ยังไม่มีออเดอร์_' });
-    const lines = state.orders.map(o =>
+
+    const PAGE = 20;
+    const total = state.orders.length;
+    const shown = state.orders.slice(0, PAGE);
+    const lines = shown.map(o =>
       `${o.status === 'wip' ? '🟡' : '🟢'} \`${o.id}\` — **${o.name}**`
     ).join('\n');
-    return interaction.reply({ ...EPH, content: `📋 **Order IDs ทั้งหมด:**\n${lines}` });
+    const header = total > PAGE
+      ? `📋 **Order IDs (แสดง ${PAGE} จาก ${total} รายการ):**\n`
+      : `📋 **Order IDs ทั้งหมด (${total} รายการ):**\n`;
+    return interaction.reply({ ...EPH, content: header + lines });
   }
 
 });
