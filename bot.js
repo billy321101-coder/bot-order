@@ -24,6 +24,20 @@ http.createServer((req, res) => {
   res.end('ok');
 }).listen(process.env.PORT || 3000);
 
+const http = require('http');
+
+// flush stdout ทันที — ไม่งั้น Render ไม่โชว์ log
+process.stdout.write = process.stdout.write.bind(process.stdout);
+process.on('unhandledRejection', (err) => console.error('❌ unhandled:', err));
+process.on('uncaughtException',  (err) => console.error('❌ uncaught:',  err));
+
+http.createServer((req, res) => {
+  res.writeHead(200);
+  res.end('ok');
+}).listen(process.env.PORT || 3000, () => {
+  console.log('✅ HTTP keep-alive server running');
+});
+
 
 
 
