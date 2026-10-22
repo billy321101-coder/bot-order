@@ -18,6 +18,15 @@ const {
 } = require('discord.js');
 const fs = require('fs');
 
+const http = require('http');
+http.createServer((req, res) => {
+  res.writeHead(200);
+  res.end('ok');
+}).listen(process.env.PORT || 3000);
+
+
+
+
 const DATA_FILE  = './data.json';
 const PANEL_ROLE = '1556698699487387711'; // role ที่มีสิทธิ์ใช้ panel
 
