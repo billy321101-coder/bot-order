@@ -433,6 +433,8 @@ console.log('TOKEN exists:', Boolean(process.env.TOKEN));
 console.log('GUILD_ID exists:', Boolean(process.env.GUILD_ID));
 
 client.login(process.env.TOKEN).catch((err) => {
+  console.log('TOKEN length:', process.env.TOKEN?.length);
+console.log('TOKEN prefix:', process.env.TOKEN?.slice(0, 10));
   console.error('❌ Discord login failed:', err);
 });
 
