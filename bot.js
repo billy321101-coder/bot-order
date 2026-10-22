@@ -197,15 +197,27 @@ const commands = [
 // ─── client ────────────────────────────────────────────────────────
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
+
 client.once('clientReady', async () => {
   console.log(`✅ Bot online: ${client.user.tag}`);
-  const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
-  await rest.put(
-    Routes.applicationGuildCommands(client.user.id, process.env.GUILD_ID),
-    { body: commands }
-  );
-  console.log('✅ Slash commands registered');
+
+  try {
+    const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
+
+    await rest.put(
+      Routes.applicationGuildCommands(
+        client.user.id,
+        process.env.GUILD_ID
+      ),
+      { body: commands }
+    );
+
+    console.log('✅ Slash commands registered');
+  } catch (err) {
+    console.error('❌ Register commands failed:', err);
+  }
 });
+
 
 const EPH = { flags: MessageFlags.Ephemeral };
 
@@ -394,4 +406,14 @@ client.on('interactionCreate', async interaction => {
 
 });
 
-client.login(process.env.TOKEN);
+
+
+
+console.log('🔄 กำลังเชื่อมต่อ Discord...');
+console.log('TOKEN exists:', Boolean(process.env.TOKEN));
+console.log('GUILD_ID exists:', Boolean(process.env.GUILD_ID));
+
+client.login(process.env.TOKEN).catch((err) => {
+  console.error('❌ Discord login failed:', err);
+});
+
