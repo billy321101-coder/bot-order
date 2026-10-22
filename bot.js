@@ -1,5 +1,6 @@
 // bot.js — Discord Order Bot | Public Board + Role-gated Panel
 require('dotenv').config();
+
 const {
   Client,
   GatewayIntentBits,
@@ -16,15 +17,17 @@ const {
   TextInputStyle,
   MessageFlags,
 } = require('discord.js');
-const fs = require('fs');
-
 
 const fs = require('fs');
 const http = require('http');
 
-process.stdout.write = process.stdout.write.bind(process.stdout);
-process.on('unhandledRejection', (err) => console.error('❌ unhandled:', err));
-process.on('uncaughtException',  (err) => console.error('❌ uncaught:',  err));
+process.on('unhandledRejection', (err) =>
+  console.error('❌ unhandled:', err)
+);
+
+process.on('uncaughtException', (err) =>
+  console.error('❌ uncaught:', err)
+);
 
 http.createServer((req, res) => {
   res.writeHead(200);
